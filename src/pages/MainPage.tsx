@@ -1,18 +1,8 @@
 import React from "react";
 import styled from "styled-components";
 
-import { Title, Background, GPTSpan, Bold, Header } from "../constants/theme";
+import { Title, Background, GPTSpan, Bold, Header, Body } from "../constants/theme";
 import * as Spotify from "../api/spotify";
-
-const Body = styled.p`
-    max-width: 400px;
-    font-family: sans-serif;
-    color: #ddd;
-    text-align: justify;
-    margin: auto;
-    display: block;
-    font-size: 1.1rem;
-`
 
 const SpotifyButton = styled.button`
     text-align: center;

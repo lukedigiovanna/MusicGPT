@@ -1,6 +1,5 @@
 import axios from "axios";
 import querystring from 'querystring';
-import { isTemplateSpan } from "typescript";
 import { User, Track, Artist } from "../constants/models";
 
 const apiKey = process.env.REACT_APP_SPOTIFY_API_KEY;
@@ -68,9 +67,9 @@ const getMe = async () => {
     return result.data;
 }
 
-const getArtists = async () => {
+const getArtists = async (term: string) => {
     const result = await axios.get(`${url}me/top/artists?${querystring.stringify({
-        time_range: "medium_term",
+        time_range: term,
         limit: 10,
         offset: 0
     })}`, {headers: getHeaders()});
@@ -78,9 +77,9 @@ const getArtists = async () => {
     return result.data;
 }
 
-const getTracks = async () => {
+const getTracks = async (term: string) => {
     const result = await axios.get(`${url}me/top/tracks?${querystring.stringify({
-        time_range: "medium_term",
+        time_range: term,
         limit: 10,
         offset: 0
     })}`, {headers: getHeaders()});
@@ -89,9 +88,9 @@ const getTracks = async () => {
 }
 
 // Collects
-const getUserData: () => Promise<User> = async () => {
+const getUserData: (term: string) => Promise<User> = async (term: string) => {
     const meData = await getMe();
-    const artistsData = await getArtists();
+    const artistsData = await getArtists(term);
     const artists: Artist[] = [];
     artistsData.items.forEach((item: any) => {
         artists.push({
@@ -99,7 +98,7 @@ const getUserData: () => Promise<User> = async () => {
             image: item.images[0].url
         });
     });
-    const tracksData = await getTracks();
+    const tracksData = await getTracks(term);
     const tracks: Track[] = [];
     tracksData.items.forEach((item: any) => {
         tracks.push({
@@ -111,8 +110,6 @@ const getUserData: () => Promise<User> = async () => {
             }
         });
     });
-    console.log(meData);
-    console.log(tracksData);
 
     return {
         id: meData.id,
@@ -123,4 +120,37 @@ const getUserData: () => Promise<User> = async () => {
     } as User;
 }
 
-export { signIn, setAuth, isSignedIn, getUserData }
+// attempts to find a song on spotify with the given artist and track
+const findSong: (a: string, t: string) => Promise<Track | null> = async (artistName: string, trackName: string) => {
+    try {
+        const result = await axios.get(`${url}search?${querystring.stringify({
+            q: `artist:${artistName} track:${trackName}`,
+            type: ['track'],
+            limit: 1,
+            offset: 0
+        })}`, {headers: getHeaders()});
+
+        if (result.data.tracks.items.length === 0) {
+            return null;
+        }
+    
+        const trackData = result.data.tracks.items[0];
+        const track: Track = {
+            artist: {
+                name: trackData.artists[0].name,
+                image: "", // no artist image, we will only show the album cover.
+                url: trackData.artists[0].external_urls.spotify
+            },
+            name: trackData.name,
+            image: trackData.album.images[0].url,
+            url: trackData.external_urls.spotify
+        };
+    
+        return track;
+    }
+    catch (e) {
+        return null;
+    }
+}
+
+export { signIn, setAuth, isSignedIn, getUserData, findSong }

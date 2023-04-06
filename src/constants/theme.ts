@@ -17,13 +17,23 @@ export const Italic = styled.span`
 `
 
 export const Background = styled.div`
-    position: absolute;
-    z-index: 0;
-    width: 100vw;
-    height: 100vh;
+    position: fixed;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
     left: 0;
     top: 0;
     background: linear-gradient(to bottom, #280221, #0a1832, #012519);
+`
+
+export const Body = styled.p`
+    max-width: 400px;
+    font-family: sans-serif;
+    color: #ddd;
+    text-align: justify;
+    margin: auto;
+    display: block;
+    font-size: 1.1rem;
 `
 
 export const Title = styled(GradientText)`
@@ -46,3 +56,9 @@ export const Header = styled.div`
     justify-content: center;
     margin-bottom: 20px;
 `
+
+const theme = {
+    font: 'Lato'
+};
+
+export default theme;
