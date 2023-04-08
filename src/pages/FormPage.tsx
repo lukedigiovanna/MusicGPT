@@ -6,11 +6,12 @@ import styled from "styled-components";
 import './form.css';
 
 import theme, { Background, Title, GPTSpan, Header, Italic } from "../constants/theme";
-import { Artist, Track, User } from "../constants/models";
+import { Artist, Track, TrackResults, User } from "../constants/models";
 import { generatePrompt, getRecommendations } from "../api/gpt";
 
 import { InputBox } from "../components/InputBox";
 import { TrackRow } from "../components/TrackRow";
+import { isNullishCoalesce } from "typescript";
 
 const Greeting = styled.p`
     text-align: center;
@@ -144,6 +145,23 @@ const Prompt = styled.p`
     margin-bottom: 2px;
 `
 
+const PlaylistTitle = styled.p`
+    margin-bottom: 4px;
+    margin-top: 15px;
+    font-size: 1.1rem;
+    color: #eee;
+    font-family: sans-serif; 
+    font-weight: bold;
+`
+
+const PlaylistDescription = styled.p`
+    font-size: 0.7rem;
+    color: #999;
+    font-family: sans-serif;
+    margin-bottom: 8px;
+    margin-top: 0px;
+`
+
 const SubmitButton = styled.button`
     text-align: center;
     padding-inline: 10px;
@@ -216,14 +234,11 @@ const FormPage = () => {
     const [selectedGenres, setSelectedGenres] = React.useState<string[]>([]);
     const [selectedMoods, setSelectedMoods] = React.useState<string[]>([]);
 
-    const [whenListen, setWhenListen] = React.useState<string>("");
-    const [setting, setSetting] = React.useState<string>("");
-    const [discovery, setDiscovery] = React.useState<string>("");
     const [extraRequest, setExtraRequest] = React.useState<string>("");
 
     const [stage, setStage] = React.useState<Stage>('form');
 
-    const [recommendations, setRecommendations] = React.useState<Track[] | null>([]);
+    const [recommendations, setRecommendations] = React.useState<TrackResults | null>(null);
 
     const getUserData = (term: Term) => {
         Spotify.getUserData(term).then(data => {
@@ -238,9 +253,6 @@ const FormPage = () => {
         else {
             // get me information
             getUserData(term);
-            Spotify.findSong("Tom Misch", "Sunshine").then((res) => {
-                console.log(res);
-            });
         }
     }, [navigate, term]); 
 
@@ -266,9 +278,6 @@ const FormPage = () => {
                 stage === 'results' &&
                 <Form>
                     <>
-                        <Prompt>
-                            Here's what the AI thinks you might like next:
-                        </Prompt>
                         {
                             !recommendations &&
                             <Prompt>
@@ -277,18 +286,43 @@ const FormPage = () => {
                         }
                         {
                             recommendations &&
-                            recommendations.map((track: Track, index: number) => {
+                            <>
+                            <Prompt>
+                                Here's your AI generated playlist
+                            </Prompt>
+                            <hr />
+                            <PlaylistTitle>
+                                {recommendations.playlist_title}
+                            </PlaylistTitle>
+                            <PlaylistDescription>
+                                {recommendations.playlist_description}
+                            </PlaylistDescription>
+                            {recommendations.tracks.map((track: Track, index: number) => {
                                 return (
                                     <TrackRow track={track} key={index} />
                                 )
-                            })
+                            })}
+                            <SubmitButton onClick={async () => {
+                                if (user) {
+                                    const result = await Spotify.generatePlaylist(user.id as string, recommendations);
+                                    if (result) {
+                                        alert(`Made playlist ${result.name}`)
+                                    }
+                                    else {
+                                        alert("Something went wrong");
+                                    }
+                                }
+                                else {
+                                    alert("Something went wrong");
+                                }
+                            }}>
+                                Export to Spotify
+                            </SubmitButton>
+                            </>
                         }
                         <SubmitButton onClick={() => {
                             setStage("form");
                             setExtraRequest("");
-                            setSetting("");
-                            setDiscovery("");
-                            setWhenListen("");
                         }}>
                             Try Again
                         </SubmitButton>
@@ -365,7 +399,7 @@ const FormPage = () => {
                     </Prompt>
                     <hr/>
                     <Prompt>
-                        Select your favorite genres
+                        Select what genres you are looking for
                     </Prompt>
                     <div>
                         {genres.map((genre: string, index: number) => {
@@ -411,36 +445,16 @@ const FormPage = () => {
                         })}
                     </div>
                     <hr />
-                    <Prompt>
-                        <Italic>
-                            The following questions are optional, but it is highly recommended to be
-                            as honest and detailed as you can to generate the best response.
-                        </Italic>
-                    </Prompt>
-                    <Prompt>
-                        When do you usually listen to music? While studying, driving, socially?
-                    </Prompt>
-                    <InputBox value={whenListen} setValue={setWhenListen} />
 
                     <Prompt>
-                        Do you like any particular music at different times of day or different seasons?
-                    </Prompt>
-                    <InputBox value={setting} setValue={setSetting} />
-
-                    <Prompt>
-                        How do you usually discover new music?
-                    </Prompt>
-                    <InputBox value={discovery} setValue={setDiscovery} />
-
-                    <Prompt>
-                        Input any additional information you would like the AI to use when generating your playlist:
+                        Describe to the AI what type of music you are looking for or what mood you are in.
                     </Prompt>
                     <InputBox value={extraRequest} setValue={setExtraRequest} />
                     
                     <SubmitButton onClick={async () => {
-                        console.log(generatePrompt(user, selectedGenres, selectedMoods, whenListen, setting, discovery, extraRequest));
+                        console.log(generatePrompt(user, selectedGenres, selectedMoods, extraRequest));
                         setStage('loading');
-                        const results = await getRecommendations(user, selectedGenres, selectedMoods, whenListen, setting, discovery, extraRequest);
+                        const results = await getRecommendations(user, selectedGenres, selectedMoods, extraRequest);
                         setStage('results');
                         setRecommendations(results);
                     }}>

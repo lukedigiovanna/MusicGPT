@@ -8,7 +8,15 @@ export interface Track {
     name: string;
     artist: Artist;
     image: string;
+    id: string; // spotify ID of the track for adding to playlists.
+    duration_ms: number,
     url?: string; // optionally throw in the url to the track
+}
+
+export interface Playlist {
+    url: string;
+    name: string;
+    tracks: Track[];
 }
 
 export interface User {
@@ -17,4 +25,10 @@ export interface User {
     image: string;
     topTracks: Track[];
     topArtists: Artist[];
+}
+
+export interface TrackResults {
+    playlist_title: string;
+    playlist_description: string;
+    tracks: Track[];
 }

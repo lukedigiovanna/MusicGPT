@@ -29,11 +29,12 @@ export const Background = styled.div`
 export const Body = styled.p`
     max-width: 400px;
     font-family: sans-serif;
-    color: #ddd;
+    color: #ccc;
     text-align: justify;
     margin: auto;
     display: block;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
+    margin-block: 3px;
 `
 
 export const Title = styled(GradientText)`

@@ -46,6 +46,21 @@ const Image = styled.img`
     border-radius: 2px;
 `
 
+const TimeSpan = styled.span`
+    font-size: 0.65rem;
+    color: #999;
+    margin-left: 5px;
+    font-family: sans-serif;
+`
+
+const getTimeFormat = (duration_ms: number) => {
+    const seconds = Math.floor(duration_ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const r_seconds = seconds % 60;
+
+    return `${minutes}:${r_seconds < 10 ? "0" : ""}${r_seconds}`;
+}
+
 export const TrackRow = (props: { track: Track }) => {
     return (
         <Row>
@@ -54,6 +69,9 @@ export const TrackRow = (props: { track: Track }) => {
                 <TitleName target="_blank" href={props.track.url}>
                     {props.track.name}
                 </TitleName>
+                <TimeSpan>
+                    ({getTimeFormat(props.track.duration_ms)})
+                </TimeSpan>
                 <br />
                 <ArtistName target="_blank" href={props.track.artist.url}>
                     {props.track.artist.name}
