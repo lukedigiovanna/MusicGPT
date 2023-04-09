@@ -30,7 +30,7 @@ export const ResultsScreen = (props: {user: User | null, recommendations: TrackR
                 {
                     !props.recommendations &&
                     <Prompt>
-                        Something went wrong!
+                        I'm sorry, I wasn't able to make a playlist based on the given information!
                     </Prompt>
                 }
                 {

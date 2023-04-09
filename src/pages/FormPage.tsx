@@ -10,7 +10,7 @@ import { TrackResults, User, Stage, Term } from "../constants/models";
 import { LoadingScreen } from "../components/LoadingScreen";
 import { ResultsScreen } from "../components/ResultsScreen";
 import { FormScreen } from "../components/FormScreen";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const BottomSpacer = styled.div`
     height: 130px;

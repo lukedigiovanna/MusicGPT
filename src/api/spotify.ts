@@ -191,4 +191,25 @@ const generatePlaylist: (userID: string, tracks: TrackResults) => Promise<Playli
     }
 }
 
-export { signIn, setAuth, isSignedIn, getUserData, findSong, generatePlaylist }
+// returns up to 5 artists from the given search term
+const searchArtists: (term: string) => Promise<Artist[]> = async (term: string) => {
+    const result = await axios.get(`${url}search?${querystring.stringify({
+        q: `artist:${term}`,
+        type: ['artist'],
+        limit: 5,
+        offset: 0
+    })}`, {headers: getHeaders()});
+
+    const artists: Artist[] = [];
+    result.data.artists.items.forEach((item: any) => {
+        artists.push({
+            name: item.name,
+            image: item.images[0].url,
+            url: item.external_urls.spotify
+        });
+    });
+
+    return artists;
+}
+
+export { signIn, setAuth, isSignedIn, getUserData, findSong, generatePlaylist, searchArtists }

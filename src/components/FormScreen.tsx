@@ -7,6 +7,7 @@ import { User, Term, Artist, TrackResults, Stage } from "../constants/models";
 
 import * as Spotify from '../api/spotify';
 import { InputBox } from "./InputBox";
+import { ArtistSelect } from "./ArtistSelect";
 import { generatePrompt, getRecommendations } from "../api/gpt";
 
 const Greeting = styled.p`
@@ -171,15 +172,18 @@ export const FormScreen = (props: {
 
     const [extraRequest, setExtraRequest] = React.useState<string>("");
 
+    const {getUserData} = props;
+
     React.useEffect(() => {
         if (!Spotify.isSignedIn()) {
             navigate("/");
         }
         else {
             // get "me" information
-            props.getUserData(term);
+            console.log("getting 'me'");
+            getUserData(term);
         }
-    }, [props, navigate, term]); 
+    }, [getUserData, navigate, term]); 
 
     return (
         <Form>
@@ -256,6 +260,15 @@ export const FormScreen = (props: {
                     "Want to use these? Tell the AI to include your top artists and tracks using the toggle."
                 }
             </Prompt>
+            {
+                !includeTop &&
+                <>
+                    <Prompt>
+                        Choose up to 5 artists to draw inspiration from:
+                    </Prompt>
+                    <ArtistSelect />
+                </>
+            }
             <hr/>
             <Prompt>
                 Select what genres you are looking for
