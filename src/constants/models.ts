@@ -32,3 +32,7 @@ export interface TrackResults {
     playlist_description: string;
     tracks: Track[];
 }
+
+export type Stage = 'form' | 'loading' | 'results';
+
+export type Term = "short_term" | "medium_term" | "long_term";

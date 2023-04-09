@@ -59,6 +59,44 @@ export const Header = styled.div`
     margin-bottom: 20px;
 `
 
+export const SubmitButton = styled.button`
+    text-align: center;
+    padding-inline: 10px;
+    font-size: 1.1rem;
+    color: #444;
+    border-radius: 5px;
+    border-radius: 3px;
+    display: block;
+    margin: auto;
+    margin-top: 10px;
+    padding-block: 6px;
+    font-family: sans-serif;
+    border: none;
+    margin-top: 25px;
+    cursor: pointer;
+
+    transition: 0.4s ease-in-out;
+
+    background-color: #c7ffc7;
+    &:hover {
+        background-color: #a9f9a9;
+    }
+`
+
+export const Form = styled.div`
+    max-width: 400px;
+    display: block;
+    margin: auto;
+    padding-inline: 8px;
+`
+
+export const Prompt = styled.p`
+    color: #eee;
+    font-family: sans-serif;
+    font-size: 0.96rem;
+    margin-bottom: 2px;
+`
+
 const theme = {
     font: 'Lato'
 };
