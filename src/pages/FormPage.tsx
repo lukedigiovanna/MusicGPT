@@ -5,13 +5,12 @@ import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import './form.css';
 
-import theme, { Background, Title, GPTSpan, Header, Italic } from "../constants/theme";
+import theme, { Background, Title, GPTSpan, Header, Italic, Bold } from "../constants/theme";
 import { Artist, Track, TrackResults, User } from "../constants/models";
 import { generatePrompt, getRecommendations } from "../api/gpt";
 
 import { InputBox } from "../components/InputBox";
 import { TrackRow } from "../components/TrackRow";
-import { isNullishCoalesce } from "typescript";
 
 const Greeting = styled.p`
     text-align: center;
@@ -50,7 +49,7 @@ const ProfileImage = styled.img`
     border-radius: 10px;
 `
 
-const Table = styled.div`
+const Table = styled.div<{enabled: boolean}>`
     display: flex;
     flex-direction: row;
     max-width: 400px;
@@ -58,6 +57,8 @@ const Table = styled.div`
     margin: auto;
     margin-bottom: 14px;
     filter: drop-shadow(0px 0px 14px #111);
+    transition: 0.5s ease-in-out;
+    opacity: ${props => props.enabled ? 1.0 : 0.25};
 `
 
 const Column = styled.div`
@@ -79,6 +80,7 @@ const ColumnHeader = styled.p`
     font-weight: bold;
     font-size: 1.1rem;
     margin-bottom: 4px;
+    margin-top: 0px;
     text-align: center;
     color: #ccc;
 `
@@ -117,6 +119,7 @@ const Form = styled.div`
     max-width: 400px;
     display: block;
     margin: auto;
+    padding-inline: 8px;
 `
 
 const OptionButton = styled.button<{selected: boolean}>`
@@ -213,14 +216,11 @@ const getUnused: (cur: Term) => Term[] = (cur: Term) => {
 }
 
 const genres = [
-    'Hip-Hop', 'Country', 'R&B', 'Classical', 'Jazz', 'Pop', 'K-Pop',
-    'J-Pop', 'Hispanic', 'Indie', 'Folk', 'Rock', 'Melodic', 'Microtonal',
-    'Funk', 'Blues', 'Gospel', 'Christian', 'Electronic', 'Techno', 'Grunge',
-    'Psychedelic Rock', 'Metal', 'Punk', 'Disco', '70s', '80s', '90s', '00s'
+    "Acoustic", "Alternative", "Ambient", "Avant-garde", "Blues", "Celtic", "Chamber music", "Chant", "Children's", "Christian", "Classical", "Country", "Dance", "Disco", "Electronic", "Experimental", "Folk", "Funk", "Gospel", "Heavy metal", "Hip hop", "House", "Indie", "Industrial", "Instrumental", "Jazz", "Latin", "Medieval", "Metal", "Motown", "New age", "Opera", "Pop", "Progressive", "Punk", "R&B/Soul", "Rap", "Reggae", "Rock", "Ska", "Soft rock", "Soundtrack", "Swing", "Techno", "Trance", "World"
 ]
 
 const moods = [
-    'Upbeat', 'Energetic', 'Chill', 'Melancholic', 'Romantic', 'Angry', 'Reflective', 'Nostalgic', 'Empowering'
+    "Aggressive", "Angry", "Calm", "Cheerful", "Confident", "Dark", "Dreamy", "Energetic", "Epic", "Happy", "Hopeful", "Inspirational", "Intense", "Light", "Melancholic", "Mellow", "Nostalgic", "Peaceful", "Playful", "Reflective", "Romantic", "Sad", "Sentimental", "Serious", "Soothing", "Suspenseful", "Thoughtful", "Uplifting"
 ]
 
 type Stage = 'form' | 'loading' | 'results';
@@ -229,7 +229,8 @@ const FormPage = () => {
     const navigate = useNavigate();
 
     const [user, setUser] = React.useState<User | null>(null);
-    const [term, setTerm] = React.useState<Term>("medium_term")
+    const [term, setTerm] = React.useState<Term>("medium_term");
+    const [includeTop, setIncludeTop] = React.useState<boolean>(false);
 
     const [selectedGenres, setSelectedGenres] = React.useState<string[]>([]);
     const [selectedMoods, setSelectedMoods] = React.useState<string[]>([]);
@@ -251,7 +252,7 @@ const FormPage = () => {
             navigate("/");
         }
         else {
-            // get me information
+            // get "me" information
             getUserData(term);
         }
     }, [navigate, term]); 
@@ -348,7 +349,13 @@ const FormPage = () => {
                         Here are your most listened to artists and tracks 
                         <Italic>{term_lengths[term][0]}</Italic>: 
                     </Prompt>
-                    <Table>
+                    <label className="switch">
+                    <input type="checkbox" checked={includeTop} onChange={(e) => {
+                        setIncludeTop(e.target.checked);
+                    }}/>
+                    <span className="slider round"></span>
+                    </label>
+                    <Table enabled={includeTop}>
                         <Column>
                             <ColumnHeader>
                                 Artists
@@ -396,6 +403,14 @@ const FormPage = () => {
                         }
                         instead. The AI will use some of these artists and tracks to figure 
                         out what type of music you like.
+                    </Prompt>
+                    <Prompt>
+                        {
+                            includeTop ?
+                            "Want something else? Tell the AI to ignore your top artists and tracks using the toggle."
+                            :
+                            "Want to use these? Tell the AI to include your top artists and tracks using the toggle."
+                        }
                     </Prompt>
                     <hr/>
                     <Prompt>
@@ -448,13 +463,14 @@ const FormPage = () => {
 
                     <Prompt>
                         Describe to the AI what type of music you are looking for or what mood you are in.
+                        <Italic> This is the most important section. <Bold>Be creative</Bold></Italic>
                     </Prompt>
                     <InputBox value={extraRequest} setValue={setExtraRequest} />
                     
                     <SubmitButton onClick={async () => {
-                        console.log(generatePrompt(user, selectedGenres, selectedMoods, extraRequest));
+                        console.log(generatePrompt(user, !includeTop, selectedGenres, selectedMoods, extraRequest));
                         setStage('loading');
-                        const results = await getRecommendations(user, selectedGenres, selectedMoods, extraRequest);
+                        const results = await getRecommendations(user, !includeTop, selectedGenres, selectedMoods, extraRequest);
                         setStage('results');
                         setRecommendations(results);
                     }}>

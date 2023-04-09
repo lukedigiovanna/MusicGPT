@@ -33,11 +33,13 @@ description: <Playlist Description>
 Ensure that the artist comes first and then the song name.
 `;
 
-export const generatePrompt = (user: User, genres: string[], moods: string[], extraContent: string) => {
+export const generatePrompt = (user: User, ignoreTop: boolean, genres: string[], moods: string[], extraContent: string) => {
     // Uses the given content to generate a prompt to the AI
     let prompt = "";
-    prompt += `My top artists are: ${user.topArtists.slice(0,5).map((v: Artist) => v.name).join(", ")}\n`;
-    prompt += `My top songs are: ${user.topTracks.slice(0,5).map((v: Track) => v.name).join(", ")}\n`;
+    if (!ignoreTop) {
+        prompt += `My top artists are: ${user.topArtists.slice(0,5).map((v: Artist) => v.name).join(", ")}\n`;
+        prompt += `My top songs are: ${user.topTracks.slice(0,5).map((v: Track) => v.name).join(", ")}\n`;
+    }
     if (genres.length > 0)
         prompt += `My favorite genres are: ${genres.join(", ")}\n`;
     if (moods.length > 0)
@@ -89,8 +91,8 @@ const parseResults: (results: string) => Promise<TrackResults | null> = async (r
     }
 }
 
-export const getRecommendations = async (user: User, genres: string[], moods: string[], extraContent: string) => {
-    const userPrompt = generatePrompt(user, genres, moods, extraContent);
+export const getRecommendations = async (user: User, ignoreTop: boolean, genres: string[], moods: string[], extraContent: string) => {
+    const userPrompt = generatePrompt(user, ignoreTop, genres, moods, extraContent);
     const messages = [
         {role: ChatCompletionRequestMessageRoleEnum.System, content: SYSTEM_PROMPT},
         {role: ChatCompletionRequestMessageRoleEnum.User, content: userPrompt}

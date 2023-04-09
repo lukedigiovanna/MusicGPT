@@ -28,6 +28,7 @@ export const Background = styled.div`
 
 export const Body = styled.p`
     max-width: 400px;
+    padding-inline: 8px;
     font-family: sans-serif;
     color: #ccc;
     text-align: justify;

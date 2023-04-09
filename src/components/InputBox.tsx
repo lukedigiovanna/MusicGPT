@@ -7,6 +7,8 @@ const InputBoxContainer = styled.div`
 
 const TextArea = styled.textarea`
     width: 100%;
+    height: 100px;
+    font-size: 0.9rem;
     display: block;
     margin: auto;
     padding: 6px;
