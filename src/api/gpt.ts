@@ -1,6 +1,6 @@
 import { ChatCompletionRequestMessageRoleEnum, Configuration, OpenAIApi } from "openai";
 
-import { Artist, Track, User, TrackResults } from "../constants/models";
+import { Artist, Track, User, TrackResults, ArtistOption } from "../constants/models";
 import { findSong } from "./spotify";
 
 const config = new Configuration({
@@ -33,19 +33,30 @@ description: <Playlist Description>
 Ensure that the artist comes first and then the song name.
 `;
 
-export const generatePrompt = (user: User, ignoreTop: boolean, genres: string[], moods: string[], extraContent: string) => {
+export const generatePrompt = (topArtists: Artist[],  artistOption: ArtistOption, topTracks: Track[], genres: string[], moods: string[], extraContent: string) => {
     // Uses the given content to generate a prompt to the AI
     let prompt = "";
-    if (!ignoreTop) {
-        prompt += `My top artists are: ${user.topArtists.slice(0,5).map((v: Artist) => v.name).join(", ")}\n`;
-        prompt += `My top songs are: ${user.topTracks.slice(0,5).map((v: Track) => v.name).join(", ")}\n`;
+    if (topArtists.length > 0) {
+        prompt += `My top artists are: ${topArtists.slice(0,5).map((v: Artist) => v.name).join(", ")}\n`;
+    }
+    if (topTracks.length > 0) {
+        prompt += `My top songs are: ${topTracks.slice(0,5).map((v: Track) => v.name).join(", ")}\n`;
     }
     if (genres.length > 0)
         prompt += `My favorite genres are: ${genres.join(", ")}\n`;
     if (moods.length > 0)
         prompt += `I currently want the following moods: ${moods.join(", ")}\n`;
     if (extraContent.length > 0)
-        prompt += `Any additional information?\n${extraContent}`;
+        prompt += `Any additional information?\n${extraContent}\n`;
+
+    if (topArtists.length > 0) {
+        if (artistOption == "only") {
+            prompt += "Super important: ONLY INCLUDE SONGS BY MY TOP ARTISTS. DO NOT INCLUDE ANY SONGS BY ANY OTHER ARTISTS!"; 
+        }
+        if (artistOption == "none") {
+            prompt += "Super important: INCLUDE ABSOLUTELY NO SONGS BY MY TOP ARTISTS. GIVE ME SONGS BY RELATED ARTISTS!"
+        }
+    }
 
     return prompt;
 }
@@ -91,8 +102,8 @@ const parseResults: (results: string) => Promise<TrackResults | null> = async (r
     }
 }
 
-export const getRecommendations = async (user: User, ignoreTop: boolean, genres: string[], moods: string[], extraContent: string) => {
-    const userPrompt = generatePrompt(user, ignoreTop, genres, moods, extraContent);
+export const getRecommendations = async (topArtists: Artist[],  artistOption: ArtistOption, topTracks: Track[], genres: string[], moods: string[], extraContent: string) => {
+    const userPrompt = generatePrompt(topArtists, artistOption, topTracks, genres, moods, extraContent);
     const messages = [
         {role: ChatCompletionRequestMessageRoleEnum.System, content: SYSTEM_PROMPT},
         {role: ChatCompletionRequestMessageRoleEnum.User, content: userPrompt}

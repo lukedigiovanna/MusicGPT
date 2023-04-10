@@ -111,7 +111,7 @@ const getUserData: (term: string) => Promise<User> = async (term: string) => {
     return {
         id: meData.id,
         name: meData.display_name,
-        image: meData.images.length > 0 ? meData.images[0].url : "https://static.thenounproject.com/png/5034901-200.png",
+        image: meData.images.length > 0 ? meData.images[0].url : "avatar.png",
         topTracks: tracks,
         topArtists: artists
     } as User;
@@ -193,6 +193,9 @@ const generatePlaylist: (userID: string, tracks: TrackResults) => Promise<Playli
 
 // returns up to 5 artists from the given search term
 const searchArtists: (term: string) => Promise<Artist[]> = async (term: string) => {
+    if (term.length === 0) {
+        return [];
+    }
     const result = await axios.get(`${url}search?${querystring.stringify({
         q: `artist:${term}`,
         type: ['artist'],
@@ -204,7 +207,7 @@ const searchArtists: (term: string) => Promise<Artist[]> = async (term: string) 
     result.data.artists.items.forEach((item: any) => {
         artists.push({
             name: item.name,
-            image: item.images[0].url,
+            image: item.images.length > 0 ? item.images[0].url : "avatar.png",
             url: item.external_urls.spotify
         });
     });

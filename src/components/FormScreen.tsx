@@ -3,12 +3,13 @@ import * as React from 'react';
 import { useNavigate } from "react-router-dom";
 
 import { Bold, Form, Italic, Prompt, SubmitButton } from "../constants/theme";
-import { User, Term, Artist, TrackResults, Stage } from "../constants/models";
+import { User, Term, Artist, TrackResults, Stage, ArtistOption, Track } from "../constants/models";
 
-import * as Spotify from '../api/spotify';
 import { InputBox } from "./InputBox";
 import { ArtistSelect } from "./ArtistSelect";
 import { generatePrompt, getRecommendations } from "../api/gpt";
+import { DropDown } from "./DropDown";
+import { PromptExampleBlock } from "./PromptExampleBlock";
 
 const Greeting = styled.p`
     text-align: center;
@@ -113,8 +114,6 @@ const TermButton = styled.span`
     }
 `
 
-
-
 const OptionButton = styled.button<{selected: boolean}>`
     background-color: ${props => props.selected ? '#74e5f4' : '#ccc'};
     border: none;
@@ -132,6 +131,16 @@ const OptionButton = styled.button<{selected: boolean}>`
     &:hover {
         background-color: ${props => props.selected ? '#81e6f4' : '#bbb'};
     }
+
+    &:disabled {
+        opacity: 0.5;
+        background-color: #bbb;
+    }
+`
+
+const LimitSpan = styled.span`
+    color: #999;
+    font-size: 0.7rem;
 `
 
 const term_lengths = {
@@ -154,36 +163,31 @@ const moods = [
     "Aggressive", "Angry", "Calm", "Cheerful", "Confident", "Dark", "Dreamy", "Energetic", "Epic", "Happy", "Hopeful", "Inspirational", "Intense", "Light", "Melancholic", "Mellow", "Nostalgic", "Peaceful", "Playful", "Reflective", "Romantic", "Sad", "Sentimental", "Serious", "Soothing", "Suspenseful", "Thoughtful", "Uplifting"
 ]
 
+const promptExamples = [
+    "I'm feeling rather medieval. Give me a playlist that you think some punks from the 1400's could bop their heads to.",
+    "I'm working on connecting to my Italian roots. Give me a playlist of Italian classics from the 70s that will make me feel the same as when I eat spaghetti.",
+    "I am hosting a party celebrating the end of the lizard overlord rule. We finally toppled the evil lizards controlling our governments. Success at last! And now we need some beats to drink lizard blood to.",
+]
+
 export const FormScreen = (props: {
     user: User,
     getUserData: (term: Term) => void,
     setStage: React.Dispatch<React.SetStateAction<Stage>>,
     setRecommendations: React.Dispatch<React.SetStateAction<TrackResults | null>> 
 }) => {
-
-    const navigate = useNavigate();
-    
     const [term, setTerm] = React.useState<Term>("medium_term");
 
     const [includeTop, setIncludeTop] = React.useState<boolean>(false);
     
+    const [selectedArtists, setSelectedArtists] = React.useState<Artist[]>([]);
+    const [artistOption, setArtistOption] = React.useState<ArtistOption>();
+
     const [selectedGenres, setSelectedGenres] = React.useState<string[]>([]);
     const [selectedMoods, setSelectedMoods] = React.useState<string[]>([]);
 
     const [extraRequest, setExtraRequest] = React.useState<string>("");
 
-    const {getUserData} = props;
-
-    React.useEffect(() => {
-        if (!Spotify.isSignedIn()) {
-            navigate("/");
-        }
-        else {
-            // get "me" information
-            console.log("getting 'me'");
-            getUserData(term);
-        }
-    }, [getUserData, navigate, term]); 
+    const {getUserData} = props; 
 
     return (
         <Form>
@@ -239,6 +243,7 @@ export const FormScreen = (props: {
                             <span key={index}>
                                 <TermButton key={index} onClick={() => {
                                     setTerm(term);
+                                    getUserData(term);
                                 }}>
                                     {` ${term_lengths[term][1]} `}
                                 </TermButton>
@@ -263,20 +268,29 @@ export const FormScreen = (props: {
             {
                 !includeTop &&
                 <>
-                    <Prompt>
-                        Choose up to 5 artists to draw inspiration from:
+                    <hr />
+                    <Prompt style={{marginBottom: 6}}>
+                        Search for up to <Bold>5</Bold> artists to draw inspiration from:
                     </Prompt>
-                    <ArtistSelect />
+                    <DropDown label="Option" options={[
+                        {value: "some", text: "Include SOME songs by these artists"}, 
+                        {value: "only", text: "Include ONLY songs by these artists"}, 
+                        {value: "none", text: "Include ZERO songs by these artists"}
+                    ]} onChange={(value: any) => {
+                        setArtistOption(value);
+                    }}/>
+                    <ArtistSelect artists={selectedArtists} setArtists={setSelectedArtists} />
                 </>
             }
             <hr/>
             <Prompt>
-                Select what genres you are looking for
+                Select what genres you are looking for: <LimitSpan>({selectedGenres.length}/3)</LimitSpan>
             </Prompt>
             <div>
                 {genres.map((genre: string, index: number) => {
                     return (
                         <OptionButton key={index} selected={selectedGenres.includes(genre)}
+                            disabled={!selectedGenres.includes(genre) && selectedGenres.length >= 3}
                             onClick={() => {
                                 if (selectedGenres.includes(genre)) {
                                     // remove it
@@ -294,12 +308,13 @@ export const FormScreen = (props: {
                 })}
             </div>
             <Prompt>
-                Choose any moods you are looking for:
+                Choose any moods you are looking for: <LimitSpan>({selectedMoods.length}/3)</LimitSpan>
             </Prompt>
             <div>
                 {moods.map((mood: string, index: number) => {
                     return (
                         <OptionButton key={index} selected={selectedMoods.includes(mood)}
+                            disabled={!selectedMoods.includes(mood) && selectedMoods.length >= 3}
                             onClick={() => {
                                 if (selectedMoods.includes(mood)) {
                                     // remove it
@@ -320,19 +335,52 @@ export const FormScreen = (props: {
 
             <Prompt>
                 Describe to the AI what type of music you are looking for or what mood you are in.
-                <Italic> This is the most important section. <Bold>Be creative</Bold></Italic>
+                <Italic><Bold> Feel free to be creative</Bold></Italic>
             </Prompt>
             <InputBox value={extraRequest} setValue={setExtraRequest} />
             
+            {
+                extraRequest.length === 0 &&
+                <Prompt style={{color: "#bb0"}}>
+                    <Italic>
+                        *Warning: It is highly recommended to provide some prompt to the AI.
+                    </Italic>
+                </Prompt>
+            }
+
             <SubmitButton onClick={async () => {
-                console.log(generatePrompt(props.user, !includeTop, selectedGenres, selectedMoods, extraRequest));
+                let artists: Artist[] = [], tracks: Track[] = [];
+                let option: ArtistOption = "none";
+                if (includeTop) {
+                    artists = props.user.topArtists;
+                    tracks = props.user.topTracks;
+                }
+                else {
+                    artists = selectedArtists;
+                    option = artistOption as ArtistOption;
+                }
+                console.log(generatePrompt(artists, option, tracks, selectedGenres, selectedMoods, extraRequest));
                 props.setStage('loading');
-                const results = await getRecommendations(props.user, !includeTop, selectedGenres, selectedMoods, extraRequest);
+                const results = await getRecommendations(artists, artistOption as ArtistOption, tracks, selectedGenres, selectedMoods, extraRequest);
                 props.setStage('results');
                 props.setRecommendations(results);
             }}>
                 Summon AI's Magic
             </SubmitButton>
+
+            <Prompt>
+                Not sure what to write? Use these examples for inspiration.
+            </Prompt>
+
+            {
+                promptExamples.map((example: string, index: number) => {
+                    return (
+                        <PromptExampleBlock prompt={example} onClick={() => {
+                            setExtraRequest(example);
+                        }}/>
+                    );
+                })
+            }
         </Form>
     )
 }

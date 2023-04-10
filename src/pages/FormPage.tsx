@@ -37,7 +37,7 @@ const FormPage = () => {
             // get "me" information
             getUserData("medium_term");
         }
-    }, [navigate]); 
+    }, []); 
 
     return (
         <>

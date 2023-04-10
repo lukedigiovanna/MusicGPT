@@ -36,3 +36,5 @@ export interface TrackResults {
 export type Stage = 'form' | 'loading' | 'results';
 
 export type Term = "short_term" | "medium_term" | "long_term";
+
+export type ArtistOption = "only" | "none" | "some";
